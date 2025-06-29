@@ -1,10 +1,13 @@
-# Create a GitHub Action Using TypeScript
+# Changes Bot Action
 
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 [![Check dist/](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml)
 [![CodeQL](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
+
+A GitHub Action that watches for file changes, runs a command when specified
+files change, and commits & pushes any resulting changes.
 
 Use this template to bootstrap the creation of a TypeScript action. :rocket:
 
@@ -207,31 +210,72 @@ For example workflow runs, check out the
 
 ## Usage
 
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-in the GitHub Actions toolkit.
+This action watches for changes to specified files in a repository, runs a
+command when those files change, and can commit and push any resulting changes.
 
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
+### Inputs
+
+| Name              | Description                                                             | Required | Default                               |
+| ----------------- | ----------------------------------------------------------------------- | -------- | ------------------------------------- |
+| `file-patterns`   | Comma-separated list of file patterns to watch for changes              | Yes      |                                       |
+| `command`         | Command to run when files matching the patterns are changed             | Yes      |                                       |
+| `commit-patterns` | Comma-separated list of file patterns to commit after command execution | Yes      |                                       |
+| `commit-message`  | Message to use for auto-commits                                         | No       | `Auto-commit from changes-bot-action` |
+| `github-token`    | GitHub token for authentication                                         | No       | `${{ github.token }}`                 |
+| `milliseconds`    | Delay in milliseconds before running the command (for debugging)        | No       | `0`                                   |
+
+### Outputs
+
+| Name               | Description                                 |
+| ------------------ | ------------------------------------------- |
+| `time`             | The time when the action completed          |
+| `changes-detected` | Boolean indicating if changes were detected |
+| `files-committed`  | List of files committed and pushed          |
+
+### Example workflow
 
 ```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
+name: Auto-update files
 
-  - name: Test Local Action
-    id: test-action
-    uses: actions/typescript-action@v1 # Commit with the `v1` tag
-    with:
-      milliseconds: 1000
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run update script when data files change
+        uses: your-username/changes-bot-action@v1
+        with:
+          file-patterns: 'data/*.json,data/*.csv'
+          command: 'npm run update-reports'
+          commit-patterns: 'reports/*.md,reports/*.json'
+          commit-message: 'Auto-update reports from data changes'
 ```
+
+## How It Works
+
+1. When a commit or PR occurs, the action checks if any files matching
+   `file-patterns` were changed
+2. If matching files were changed, it runs the specified `command`
+3. After running the command, it checks if any files matching `commit-patterns`
+   were modified
+4. If files were modified, it commits them using the specified `commit-message`
+   and pushes the changes
+
+This is useful for:
+
+- Automatically generating documentation from code changes
+- Updating reports when data files change
+- Reformatting files according to style guidelines
+- Running code generators when source files change
 
 ## Publishing a New Release
 

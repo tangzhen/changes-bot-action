@@ -1,23 +1,47 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: Changes Bot Action
+description: Run commands on file changes and commit/push the results if needed
+author: GitHub Actions
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: git-commit
+  color: green
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  file-patterns:
+    description: Comma-separated list of file patterns to watch for changes
     required: true
-    default: '1000'
+  command:
+    description: Command to run when files matching the patterns are changed
+    required: true
+  commit-patterns:
+    description:
+      Comma-separated list of file patterns to commit after command execution
+    required: true
+  commit-message:
+    description: Message to use for auto-commits
+    required: false
+    default: 'Auto-commit from changes-bot-action'
+  github-token:
+    description:
+      GitHub token for authentication (auto-provided by GitHub Actions)
+    required: false
+    default: ${{ github.token }}
+  milliseconds:
+    description:
+      Delay in milliseconds before running the command (for debugging)
+    required: false
+    default: '0'
 
 # Define your outputs here.
 outputs:
   time:
-    description: Your output description here
+    description: The time when the action completed
+  changes-detected:
+    description: Boolean indicating if changes were detected
+  files-committed:
+    description: List of files committed and pushed
 
 runs:
   using: node20
